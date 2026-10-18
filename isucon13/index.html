@@ -162,7 +162,7 @@
 <main>
 <header>
   <h1>ISUCON13 スコアと順位</h1>
-  <p class="subtitle">スコアがいくつなら何位だったか。出典は公式の「<a href="https://isucon.net/archives/57993937.html">ISUCON13 受賞チームおよび全チームスコア</a>」（2023-11-26 公開、大会は 2023-11-25）。2026-10-18 作成</p>
+  <p class="subtitle">スコアがいくつなら何位だったか。出典は公式の「<a href="https://isucon.net/archives/57993937.html">ISUCON13 受賞チームおよび全チームスコア</a>」（2023-11-26 公開、大会は 2023-11-25）。2026-10-18 作成、練習のスコアは 16:22 の走行まで</p>
 </header>
 
 <section id="overview" data-nav-group="概要">
@@ -184,7 +184,7 @@
   <div class="card">
     <div class="lookup-form">
       <label for="score-input">スコア</label>
-      <input id="score-input" type="number" min="0" step="1" value="3673" inputmode="numeric">
+      <input id="score-input" type="number" min="0" step="1" value="21360" inputmode="numeric">
     </div>
     <div class="chips" id="chips"></div>
     <div class="result-rank" id="r-rank">-</div>
@@ -194,7 +194,7 @@
       <div class="card"><h3>次の順位帯まで</h3><ul id="r-next"></ul></div>
     </div>
   </div>
-  <p class="note">練習（自前の EC2）のスコアは、本番とは環境が違うので順位は目安（<a href="#source">9 章</a>）。練習のスコアはまだ無い。</p>
+  <p class="note">ボタンの値は 10/18 の練習（自前の EC2）でのスコア（同じ条件で繰り返した走行は 4 章の表だけに載せた）。本番とは環境が違うので、順位は目安（<a href="#source">9 章</a>）。</p>
 </section>
 
 <section id="milestones" data-nav-group="使う">
@@ -208,14 +208,14 @@
 
 <section id="curve" data-nav-group="分布">
   <h2>4. 順位とスコア</h2>
-  <p>横軸が順位、縦軸がスコア。上位 10 チームが 13 万点を超えて突出し、30 位で約 5 万点、100 位で約 2 万点、中央で約 1 万点まで下がる。差が大きいので、縦軸は最初から対数にしている。白い点は練習のスコア（今は Go の初期実装の値だけ）。</p>
+  <p>横軸が順位、縦軸がスコア。上位 10 チームが 13 万点を超えて突出し、30 位で約 5 万点、100 位で約 2 万点、中央で約 1 万点まで下がる。差が大きいので、縦軸は最初から対数にしている。白い点は練習のスコア。インデックスで約 3 倍、DB の分離の後に 100 位の線を越えた。</p>
   <div class="chart" id="curve-chart">
     <div class="chart-tools"><label><input type="checkbox" id="log-toggle" checked> 縦軸を対数にする（外すと上位の突出が見える）</label></div>
     <svg id="curve-svg" viewBox="0 0 880 340" role="img" aria-label="順位とスコアの折れ線"></svg>
     <div class="tooltip" id="curve-tip"></div>
   </div>
   <div class="table-wrap"><table>
-    <thead><tr><th>練習のスコア</th><th class="num">スコア</th><th class="num">順位</th><th class="num">上位</th></tr></thead>
+    <thead><tr><th>練習のスコア（10/18）</th><th class="num">スコア</th><th class="num">順位</th><th class="num">上位</th></tr></thead>
     <tbody id="practice-table"></tbody>
   </table></div>
 </section>
@@ -283,7 +283,7 @@
         <td>小</td>
       </tr>
       <tr>
-        <td><b>当面の目標線を置く</b><br>Go の初期実装 3,673 点（477 位）→ 中央値 9,988 点（約 2.7 倍）→ 100 位の 21,108 点（約 5.7 倍）→ 30 位の 49,344 点（約 13 倍）</td>
+        <td><b>当面の目標線を置く</b><br>Go の初期実装 3,673 点（477 位）→ 中央値 9,988 点（約 2.7 倍）→ 100 位の 21,108 点（約 5.7 倍）→ 30 位の 49,344 点（約 13 倍）。練習の最新は 21,360 点（99 位相当）で、100 位の線は越えた。次の線は 30 位</td>
         <td><span class="tag mid">中</span></td>
         <td><span class="guess"></span>練習の伸びを「何位相当か」で語れるので、改善の優先度を決めやすい</td>
         <td>中（本番と環境が違うので、順位はあくまで目安）</td>
@@ -319,8 +319,10 @@
     <li class="fact">データは 2026-10-18 に記事の HTML から抜き出した。順位付きのチームはスコアの降順で並んでいること、件数（順位付き 506・fail 155）が記事の一覧と一致することを確認した</li>
     <li class="fact">記事は初出の後に、上位入賞チームのスコアの誤りの修正と、TOP30 への学生の印の追記があった（2023-11-26 18:28 の追記による）。このページは修正後の記事から作った</li>
     <li class="fact">3,673 点は記事の 10X 賞の説明にある「Go言語の初回のベンチマークスコア」。運営の環境での値</li>
+    <li class="fact">練習のスコアは、練習リポジトリの issue のコメントに記録された値（issue #5・issue #6・issue #7・issue #9・issue #25・issue #12）。10 走行とも最終チェック成功。計測の 3,761 だけはスロークエリログありの走行</li>
+    <li class="fact">DB の分離の 2 回（12,088 → 21,360）は、同じコードで再起動の前後に測ったもので、約 1.8 倍の差の原因は確認していない。21,360 は上振れの可能性がある</li>
     <li class="fact">練習のスコアは、このファイルの <code>PRACTICE</code> に足すと、2 章のボタン・4 章のグラフと表に出る</li>
-    <li class="guess">練習と本番では、ベンチマーカーの環境（運営のポータルか、自前の EC2 か）とサーバー構成が違う。練習のスコアをそのまま本番の順位に当てはめることはできない。目安として使う</li>
+    <li class="guess">練習と本番では、ベンチマーカーの環境（運営のポータルか、練習で立てた isu4 か）とサーバー構成が違う。練習のスコアをそのまま本番の順位に当てはめることはできない。目安として使う</li>
     <li class="guess">2026 年の本番は問題も環境も別なので、スコアの水準は ISUCON13 と比べられない。使えるのは「fail の多さ」や「上位ほど急に伸びる分布の形」のような傾向のほう</li>
   </ul>
 </section>
@@ -338,8 +340,20 @@
   passed.forEach((t, i) => { t.rank = i > 0 && passed[i - 1].score === t.score ? passed[i - 1].rank : i + 1; });
 
   const BASELINE = 3673;
+  const LATEST = 21360;
+  // minor は同じ条件で繰り返した走行。表とグラフには出し、2 章のボタンには出さない。
   const PRACTICE = [
     { label: "Go の初期実装（記事の 10X 賞の説明より、運営の環境）", score: BASELINE },
+    { label: "初期スコア（14:28、無変更）", score: 3366 },
+    { label: "無変更のままデプロイ（14:48）", score: 3722, minor: true },
+    { label: "計測を入れた（15:00 頃、スロークエリログあり）", score: 3761, minor: true },
+    { label: "DB 接続の改善の前 1 回目（15:36 頃）", score: 3716, minor: true },
+    { label: "DB 接続の改善の前 2 回目", score: 3531, minor: true },
+    { label: "DB 接続の改善の後 1 回目（interpolateParams など）", score: 3887, minor: true },
+    { label: "DB 接続の改善（後 2 回目、15:44 頃）", score: 4418 },
+    { label: "インデックス（16:05）", score: 12920 },
+    { label: "DB 分離・再起動前（16:16）", score: 12088 },
+    { label: "DB 分離・再起動後（16:22）", score: LATEST },
   ];
   const MID = Math.ceil(N / 2);
   const MILESTONES = [1, 3, 10, 30, 50, 100, 150, 200, MID, 300, 400, 500];
@@ -405,7 +419,7 @@
   const curveTip = document.getElementById("curve-tip");
   const logToggle = document.getElementById("log-toggle");
   const C = { w: 880, h: 340, l: 56, r: 20, t: 16, b: 40 };
-  let currentScore = BASELINE;
+  let currentScore = LATEST;
 
   const drawCurve = () => {
     curveSvg.replaceChildren();
@@ -476,7 +490,7 @@
   PRACTICE.forEach((p) => {
     const r = rankOf(p.score);
     const tr = row([[p.label], [fmt(p.score), "num"], [r > N ? "圏外" : `${r} 位`, "num"], [r > N ? "-" : pct(r), "num"]]);
-    if (p.score === BASELINE) tr.classList.add("me");
+    if (p.score === LATEST) tr.classList.add("me");
     pBody.appendChild(tr);
   });
 
@@ -588,7 +602,7 @@
   // 2. 順位検索
   const input = document.getElementById("score-input");
   const chips = document.getElementById("chips");
-  PRACTICE.forEach((p) => {
+  PRACTICE.filter((p) => !p.minor).forEach((p) => {
     const b = el("button", { type: "button", class: "chip" }, `${p.label.replace(/（.*$/, "")}: ${fmt(p.score)}`);
     b.addEventListener("click", () => { input.value = p.score; update(); });
     chips.appendChild(b);
