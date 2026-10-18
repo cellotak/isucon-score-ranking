@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ISUCON13 スコアと順位</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --fg: #1a1a1a;
+    --text: #1a1a1a;
+    --muted: #555;
+    --card: #ffffff;
+    --panel: #ffffff;
+    --border: #e2e2dd;
+    --grid: #ebebe6;
+    --accent: #c8322b;
+    --accent-soft: #fbe9e7;
+    --accent-light: #e9a29d;
+    --table-head: #f2efe8;
+    --code-bg: #f4f1ea;
+    --warn: #b06a00;
+    --warn-soft: #fdf3e2;
+    --ok: #2a7a4b;
+    --ok-soft: #e8f5ed;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Segoe UI", sans-serif;
+    line-height: 1.7;
+    font-size: 15px;
+  }
+  main { max-width: 960px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+  header { border-bottom: 3px solid var(--accent); padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  h1 { font-size: 1.8rem; margin: 0 0 .35rem; }
+  .subtitle { color: var(--muted); margin: 0; font-size: .95rem; }
+  h2 { font-size: 1.3rem; margin: 2.6rem 0 .9rem; padding-left: .6rem; border-left: 4px solid var(--accent); }
+  h3 { font-size: 1.05rem; margin: 1.4rem 0 .5rem; }
+  p { margin: .6rem 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code { background: var(--code-bg); padding: .1rem .35rem; border-radius: 4px; font-size: .9em; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; margin: 1rem 0; }
+  .callout { background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: 6px; padding: .8rem 1rem; margin: 1rem 0; }
+  .callout.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+  .callout.ok { background: var(--ok-soft); border-left-color: var(--ok); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--border); font-size: .92rem; margin: .6rem 0 1rem; }
+  th, td { text-align: left; padding: .45rem .75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--table-head); font-weight: 600; white-space: nowrap; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.me td { background: var(--accent-soft); font-weight: 600; }
+  .fact::before { content: "事実"; font-size: .72rem; font-weight: 700; color: var(--ok); margin-right: .4rem; }
+  .guess::before { content: "推測"; font-size: .72rem; font-weight: 700; color: var(--warn); margin-right: .4rem; }
+  .note { font-size: .85rem; color: var(--muted); }
+  .tag { display: inline-block; font-size: .75rem; padding: .05rem .55rem; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+  .tag.high { background: var(--accent-soft); color: var(--accent); }
+  .tag.mid { background: var(--warn-soft); color: var(--warn); }
+  .tag.low { background: var(--ok-soft); color: var(--ok); }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .7rem; margin: 1rem 0 1.4rem; }
+  .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: .7rem .9rem; }
+  .kpi .v { font-size: 1.45rem; font-weight: 700; line-height: 1.25; }
+  .kpi .l { color: var(--muted); font-size: .8rem; margin-top: .15rem; }
+
+  .lookup-form { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
+  .lookup-form input {
+    font-size: 1.3rem; padding: .4rem .7rem; width: 11rem; border: 1px solid var(--border);
+    border-radius: 8px; font-variant-numeric: tabular-nums;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .6rem; }
+  .chip {
+    border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: .2rem .75rem;
+    font-size: .82rem; cursor: pointer; color: var(--fg);
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .result-rank { font-size: 3rem; font-weight: 700; line-height: 1.1; margin: .8rem 0 .2rem; }
+  .result-rank small { font-size: 1rem; font-weight: 600; color: var(--muted); margin-left: .4rem; }
+  .result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .8rem; margin-top: .8rem; }
+  .result-grid .card { margin: 0; }
+  .result-grid h3 { margin: 0 0 .3rem; font-size: .9rem; color: var(--muted); }
+  .result-grid ul { margin: 0; padding-left: 1.1rem; }
+
+  .chart { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: .8rem .8rem .4rem; margin: .8rem 0; }
+  .chart svg { display: block; width: 100%; height: auto; }
+  .chart .axis text, .chart .label { font-size: 11px; fill: var(--muted); }
+  .chart .label.strong { fill: var(--fg); font-weight: 600; paint-order: stroke; stroke: var(--card); stroke-width: 3px; }
+  .chart-tools { display: flex; gap: 1rem; align-items: center; font-size: .85rem; color: var(--muted); margin-bottom: .3rem; }
+  .tooltip {
+    position: absolute; pointer-events: none; background: #1a1a1a; color: #fff; font-size: .8rem;
+    padding: .35rem .6rem; border-radius: 6px; white-space: nowrap; display: none; z-index: 5; line-height: 1.5;
+  }
+  .hbar-row { display: grid; grid-template-columns: 12rem 1fr; gap: .6rem; align-items: center; margin: .35rem 0; font-size: .9rem; }
+  .hbar-track { position: relative; height: 18px; }
+  .hbar { height: 18px; background: var(--accent); border-radius: 0 4px 4px 0; }
+  .hbar-val { position: absolute; top: -1px; font-size: .82rem; color: var(--fg); font-variant-numeric: tabular-nums; }
+
+  details { margin: .6rem 0; }
+  summary { cursor: pointer; font-weight: 600; }
+  .filter { padding: .35rem .6rem; border: 1px solid var(--border); border-radius: 6px; width: 16rem; margin: .5rem 0; font-size: .9rem; }
+  footer { margin-top: 3rem; padding-top: 1.2rem; border-top: 1px solid var(--border); color: var(--muted); font-size: .85rem; }
+  @media (max-width: 640px) {
+    main { padding: 1.5rem 1rem 3rem; }
+    .hbar-row { grid-template-columns: 8rem 1fr; }
+    .result-rank { font-size: 2.3rem; }
+  }
+  /* report-sidebar */
+  .side-nav {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 280px; overflow-y: auto;
+    background: var(--panel, #fff); color: var(--text, #1f2328);
+    border-right: 1px solid var(--border, #d0d7de); z-index: 10;
+    font-size: 13px; transition: transform 0.2s ease;
+  }
+  .side-nav .nav-head { background: var(--accent, #0969da); color: #fff; padding: 18px 18px 14px 52px; }
+  .side-nav .nav-head .nav-title { font-size: 16px; font-weight: 700; line-height: 1.4; margin: 0 0 4px; }
+  .side-nav .nav-head .nav-sub { font-size: 12px; opacity: 0.9; margin: 0; }
+  .side-nav .nav-search { padding: 12px 14px; border-bottom: 1px solid var(--border, #d0d7de); }
+  .side-nav .nav-search input {
+    width: 100%; padding: 7px 10px; border: 1px solid var(--border, #d0d7de); border-radius: 6px;
+    font-size: 13px; background: var(--bg, #fafafa); color: inherit; box-sizing: border-box;
+  }
+  .side-nav .nav-group { padding: 10px 0 4px; }
+  .side-nav .nav-group-title { font-size: 11px; font-weight: 700; color: var(--accent, #0969da); padding: 4px 18px; }
+  .side-nav a {
+    display: block; padding: 5px 18px; color: inherit; text-decoration: none;
+    border-left: 3px solid transparent; line-height: 1.45;
+  }
+  .side-nav a:hover { background: var(--code-bg, #f6f8fa); }
+  .side-nav a.sub { padding-left: 30px; font-size: 12px; color: var(--muted, #57606a); }
+  .side-nav a.active {
+    background: var(--accent-soft, #ddf4ff); border-left-color: var(--accent, #0969da);
+    color: var(--accent, #0969da); font-weight: 600;
+  }
+  .side-nav a.hidden, .side-nav .nav-group.hidden { display: none; }
+  .side-nav-toggle {
+    position: fixed; top: 14px; left: 12px; z-index: 11; width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 6px; cursor: pointer;
+    background: rgba(255, 255, 255, 0.15); color: #fff; font-size: 16px; line-height: 1;
+  }
+  .side-nav-toggle:hover { background: rgba(255, 255, 255, 0.3); }
+  body.has-side-nav { padding-left: 280px; transition: padding-left 0.2s ease; }
+  body.side-nav-collapsed .side-nav { transform: translateX(-100%); }
+  body.side-nav-collapsed .side-nav-toggle {
+    background: var(--panel, #fff); color: var(--accent, #0969da); border-color: var(--border, #d0d7de);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  }
+  body.has-side-nav.side-nav-collapsed { padding-left: 56px; }
+  [data-nav-group], [data-nav-item] { scroll-margin-top: 16px; }
+  @media (max-width: 900px) {
+    .side-nav { position: static; width: auto; max-height: 50vh; border-right: none; border-bottom: 1px solid var(--border, #d0d7de); }
+    .side-nav-toggle { position: absolute; }
+    body.has-side-nav, body.has-side-nav.side-nav-collapsed { padding-left: 0; }
+    body.side-nav-collapsed .side-nav { display: none; }
+  }
+</style>
+</head>
+<body data-nav-title="ISUCON13 スコアと順位" data-nav-subtitle="全チームスコアからの早見資料">
+<main>
+<header>
+  <h1>ISUCON13 スコアと順位</h1>
+  <p class="subtitle">スコアがいくつなら何位だったか。出典は公式の「<a href="https://isucon.net/archives/57993937.html">ISUCON13 受賞チームおよび全チームスコア</a>」（2023-11-26 公開、大会は 2023-11-25）。2026-10-18 作成</p>
+</header>
+
+<section id="overview" data-nav-group="概要">
+  <h2>1. 概要</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="v" id="k-total">-</div><div class="l">記事に載っているチーム</div></div>
+    <div class="kpi"><div class="v" id="k-passed">-</div><div class="l">順位が付いたチーム</div></div>
+    <div class="kpi"><div class="v" id="k-failed">-</div><div class="l">fail（追試・最終スコア 0 など）</div></div>
+    <div class="kpi"><div class="v" id="k-median">-</div><div class="l">順位が付いたチームの中央値</div></div>
+    <div class="kpi"><div class="v" id="k-top">-</div><div class="l">1 位のスコア</div></div>
+  </div>
+  <p class="fact">順位が付くのは、当日マニュアルの「最終スコア」の手順（追試を含む）をすべて通ったチームだけ。fail したチームは参考スコアが載っているが順位は無い。このページの「何位」は、順位が付いた <span id="n-passed">-</span> チームの中での位置である。</p>
+  <p class="fact">同点のチームは同じ順位として数える（同点で順位が重なるチームは <span id="n-ties">-</span>）。学生チームの印（※）は記事の TOP30 にしか付いていないので、31 位以下は印の有無が分からない。</p>
+  <p class="fact">記事の 10X 賞の説明に、Go の初期実装の初回のベンチマークスコアは 3,673 点とある。このページでは、これを「何倍か」の基準にする。</p>
+</section>
+
+<section id="lookup" data-nav-group="使う">
+  <h2>2. スコアから順位を調べる</h2>
+  <div class="card">
+    <div class="lookup-form">
+      <label for="score-input">スコア</label>
+      <input id="score-input" type="number" min="0" step="1" value="3673" inputmode="numeric">
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="result-rank" id="r-rank">-</div>
+    <div id="r-sub" class="note"></div>
+    <div class="result-grid">
+      <div class="card"><h3>前後のチーム（順位は記事での実際の順位）</h3><ul id="r-neighbors"></ul></div>
+      <div class="card"><h3>次の順位帯まで</h3><ul id="r-next"></ul></div>
+    </div>
+  </div>
+  <p class="note">練習（自前の EC2）のスコアは、本番とは環境が違うので順位は目安（<a href="#source">9 章</a>）。練習のスコアはまだ無い。</p>
+</section>
+
+<section id="milestones" data-nav-group="使う">
+  <h2>3. 順位帯ごとの必要スコア</h2>
+  <p>その順位に入るのに必要だった最低スコア（その順位のチームのスコア）。</p>
+  <div class="table-wrap"><table id="milestone-table">
+    <thead><tr><th class="num">順位</th><th class="num">上位</th><th class="num">スコア</th><th>チーム</th><th class="num">Go の初期実装 3,673 の何倍か</th></tr></thead>
+    <tbody></tbody>
+  </table></div>
+</section>
+
+<section id="curve" data-nav-group="分布">
+  <h2>4. 順位とスコア</h2>
+  <p>横軸が順位、縦軸がスコア。上位 10 チームが 13 万点を超えて突出し、30 位で約 5 万点、100 位で約 2 万点、中央で約 1 万点まで下がる。差が大きいので、縦軸は最初から対数にしている。白い点は練習のスコア（今は Go の初期実装の値だけ）。</p>
+  <div class="chart" id="curve-chart">
+    <div class="chart-tools"><label><input type="checkbox" id="log-toggle" checked> 縦軸を対数にする（外すと上位の突出が見える）</label></div>
+    <svg id="curve-svg" viewBox="0 0 880 340" role="img" aria-label="順位とスコアの折れ線"></svg>
+    <div class="tooltip" id="curve-tip"></div>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>練習のスコア</th><th class="num">スコア</th><th class="num">順位</th><th class="num">上位</th></tr></thead>
+    <tbody id="practice-table"></tbody>
+  </table></div>
+</section>
+
+<section id="histogram" data-nav-group="分布">
+  <h2>5. スコアの分布</h2>
+  <p>5,000 点刻みのチーム数（100,000 点以上は 1 本にまとめた）。半数のチームが約 1 万点より下にいる。濃い棒は 2 章で入力したスコアが入る区間。</p>
+  <div class="chart" id="hist-chart">
+    <svg id="hist-svg" viewBox="0 0 880 300" role="img" aria-label="スコアの分布"></svg>
+    <div class="tooltip" id="hist-tip"></div>
+  </div>
+  <details><summary>表で見る</summary>
+    <div class="table-wrap"><table><thead><tr><th>区間</th><th class="num">チーム数</th><th class="num">累計（上から）</th></tr></thead><tbody id="hist-table"></tbody></table></div>
+  </details>
+</section>
+
+<section id="fail" data-nav-group="fail">
+  <h2>6. fail したチーム</h2>
+  <p class="fact">記事に載っている <span id="f-total">-</span> チームのうち <span id="f-count">-</span> チーム（<span id="f-pct">-</span>）が fail。理由の内訳は次のとおり（理由は記事の表記による）。</p>
+  <div id="fail-bars" class="card"></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>理由</th><th>記事の表記</th><th>補足</th></tr></thead>
+    <tbody>
+      <tr><td>最終スコア 0</td><td>最終スコア0</td><td>競技中の最後の計測が 0 点</td></tr>
+      <tr><td>再起動後スコア 0</td><td>再起動後スコア0</td><td>追試で全サーバーを再起動した後の負荷走行が fail</td></tr>
+      <tr><td>個別に連絡</td><td>個別にご連絡しています</td><td>記事には理由が書かれていない</td></tr>
+      <tr><td>スコア登録なし</td><td>スコア登録なし</td><td>スコアが 1 回も登録されていない</td></tr>
+      <tr><td>再起動後のデータ不整合</td><td>再起動後のデータチェックで不整合があったため</td><td>負荷走行で書き込んだデータが、再起動後に取得できない</td></tr>
+      <tr><td>再起動後 75% 以下</td><td>再起動後のスコアが75%以下であったため</td><td>再起動後のスコアが最終スコアの 75% 以下</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note">補足は <a href="https://github.com/isucon/isucon13/blob/main/docs/cautionary_note.md">当日マニュアル</a> の「追試」による。マニュアルでは、データの取得の確認は上位チームだけに行う。</p>
+  <h3 id="fail-high" data-nav-item="高スコアで fail したチーム">高スコアで fail したチーム（参考スコア上位 10）</h3>
+  <p>fail しなければ上位に入っていたチームがある。参考スコアから見た「通っていれば何位相当か」を併記する。</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th class="num">参考スコア</th><th class="num">通っていれば</th><th>チーム</th><th>理由</th></tr></thead>
+    <tbody id="fail-top"></tbody>
+  </table></div>
+</section>
+
+<section id="implications" data-nav-group="練習への示唆">
+  <h2>7. 練習への示唆</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>対応案</th><th>優先度</th><th>効果</th><th>リスク</th><th>工数</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>再起動試験を手順にして、練習で毎回通す</b><br>全サーバーを再起動 → アプリが起動していることを確認 → ベンチが通ることを確認</td>
+        <td><span class="tag high">高</span></td>
+        <td><span class="fact"></span>再起動後スコア 0 が 51 チーム。そのうち 11 チームは参考スコアが 2 万点以上で、通っていれば 100 位前後より上だった</td>
+        <td>低</td>
+        <td>小</td>
+      </tr>
+      <tr>
+        <td><b>最後の計測を 0 点にしない</b><br>終了前の一定時間は変更を止め、通ることが分かっている状態で最後のベンチを流す</td>
+        <td><span class="tag high">高</span></td>
+        <td><span class="fact"></span>最終スコア 0 が 83 チームで、fail の理由で最も多い。通過さえすれば、最下位のスコア 614 でも 506 位が付いた</td>
+        <td>低</td>
+        <td>小</td>
+      </tr>
+      <tr>
+        <td><b>永続性に関わる変更をした回は、再起動後にデータが残るかを確かめる</b><br>例: MySQL の書き込みの設定、オンメモリのキャッシュ</td>
+        <td><span class="tag mid">中</span></td>
+        <td><span class="fact"></span>データ不整合は 4 チームだけだが、参考スコア 227,377（通っていれば 3 位相当）のチームが含まれる</td>
+        <td>低</td>
+        <td>小</td>
+      </tr>
+      <tr>
+        <td><b>当面の目標線を置く</b><br>Go の初期実装 3,673 点（477 位）→ 中央値 9,988 点（約 2.7 倍）→ 100 位の 21,108 点（約 5.7 倍）→ 30 位の 49,344 点（約 13 倍）</td>
+        <td><span class="tag mid">中</span></td>
+        <td><span class="guess"></span>練習の伸びを「何位相当か」で語れるので、改善の優先度を決めやすい</td>
+        <td>中（本番と環境が違うので、順位はあくまで目安）</td>
+        <td>小</td>
+      </tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="all" data-nav-group="資料">
+  <h2>8. 全チーム一覧</h2>
+  <details>
+    <summary>順位が付いたチーム（<span id="all-count">-</span>）</summary>
+    <input class="filter" id="all-filter" type="search" placeholder="チーム名・スコアで絞り込む">
+    <div class="table-wrap"><table>
+      <thead><tr><th class="num">順位</th><th class="num">スコア</th><th>チーム</th><th>学生</th></tr></thead>
+      <tbody id="all-table"></tbody>
+    </table></div>
+  </details>
+  <details>
+    <summary>fail したチーム（<span id="fail-count2">-</span>）</summary>
+    <input class="filter" id="fail-filter" type="search" placeholder="チーム名・理由で絞り込む">
+    <div class="table-wrap"><table>
+      <thead><tr><th class="num">参考スコア</th><th>チーム</th><th>理由</th></tr></thead>
+      <tbody id="fail-table"></tbody>
+    </table></div>
+  </details>
+</section>
+
+<section id="source" data-nav-group="資料">
+  <h2>9. 出典と注意</h2>
+  <ul>
+    <li class="fact">データは 2026-10-18 に記事の HTML から抜き出した。順位付きのチームはスコアの降順で並んでいること、件数（順位付き 506・fail 155）が記事の一覧と一致することを確認した</li>
+    <li class="fact">記事は初出の後に、上位入賞チームのスコアの誤りの修正と、TOP30 への学生の印の追記があった（2023-11-26 18:28 の追記による）。このページは修正後の記事から作った</li>
+    <li class="fact">3,673 点は記事の 10X 賞の説明にある「Go言語の初回のベンチマークスコア」。運営の環境での値</li>
+    <li class="fact">練習のスコアは、このファイルの <code>PRACTICE</code> に足すと、2 章のボタン・4 章のグラフと表に出る</li>
+    <li class="guess">練習と本番では、ベンチマーカーの環境（運営のポータルか、自前の EC2 か）とサーバー構成が違う。練習のスコアをそのまま本番の順位に当てはめることはできない。目安として使う</li>
+    <li class="guess">2026 年の本番は問題も環境も別なので、スコアの水準は ISUCON13 と比べられない。使えるのは「fail の多さ」や「上位ほど急に伸びる分布の形」のような傾向のほう</li>
+  </ul>
+</section>
+
+<footer>出典: <a href="https://isucon.net/archives/57993937.html">https://isucon.net/archives/57993937.html</a>（ISUCON 公式ブログ）</footer>
+</main>
+
+<script type="application/json" id="data">{"passed":[[468006,"NaruseJun",0],[243852,"織時屋",1],[214941,"ultra_fast_gopher",0],[187577,"釜中の鯖",0],[185814,"FetchDecodeExecWrite",0],[167438,"takonomura",1],[162691,"qt",0],[148078,"negainoido",0],[147649,"くすサポISUCON部",0],[135709,"第8西東京市",0],[127149,"百万円ドリブン",0],[125603,"チーム7年目",0],[111625,"MONOS",1],[110461,"boulder",0],[105751,"カラアゲネイティブ",0],[105229,"smktz",0],[103866,"がんもどき（without りょは）",1],[103838,"白金動物園",0],[95094,"ふんばり温泉チーム",0],[91400,"なんかいい感じではやいやつ",0],[86982,"快適PandA",0],[86322,"パカパカアルパカ",0],[73983,"たつや",0],[61914,"isucon_friends",0],[58631,"Maxif.",1],[58370,"soba",0],[57949,"Cloudbase-ProTeam",0],[56881,"Create Speedy Logic",0],[52054,"コンパニ麻布",0],[49344,"ウー馬場ーイー222",0],[48423,"kai-fan-club",0],[48239,"swamp",0],[47796,"theorem",0],[47291,"リアクティブ二子玉川〜♪",0],[46618,"羽つき表参道のお茶会",0],[46534,"DO NOT SET ENABLE_NESTLOOP TO OFF;",0],[45670,"s",0],[41189,"FCCPC",0],[40187,"shallowverse",0],[39560,"Curl Gotti",0],[39243,"メンチカツ",0],[38634,"デ20",0],[37898,"もなお",0],[37845,"ロギング",0],[37744,"ONAKA NO OWARI",0],[37416,"( (0) / (0)) ☆祝☆",0],[35904,"チームひろし",0],[35679,"mctg",0],[35524,"gefoun",0],[35301,"JSON・ボーヒーズ",0],[34984,"42rabbit",0],[34753,"(´・ω・｀)",0],[34558,"給食当番",0],[34489,"†mp",0],[33821,"funwarichair",0],[33789,"四川マーボー豆腐(本場の辛さ)",0],[33241,"雑用係",0],[32871,"4",0],[32810,"横浜の缶詰",0],[32592,"俺らのlatestMap",0],[32269,"tokiwa",0],[32153,".dat",0],[31853,"GET /isu",0],[31049,"tetora",0],[30518,"daku10",0],[30418,"CatBoys",0],[29072,"シャチホコ",0],[28581,"さばかんちゃーはんかれー",0],[28327,"食道楽",0],[28232,"マルチタスクマスタリーサーバーズ",0],[27164,"ソレイユ",0],[27045,"ルビコン解放戦線",0],[26742,"Crab Nebula",0],[26716,"Team MOJAMOJA",0],[26597,"Overcached!",0],[26544,"揚げパン",0],[26074,"plz2",0],[25962,"yugo",0],[25710,"チームO'",0],[25674,"nisucon-bu",0],[25460,"2507",0],[25250,"yeeeeeeh",0],[24703,"とぉ〜れとっれぴぃ〜ちぴっち",0],[24388,"Cloudbase-Unlock",0],[24267,"wgureimonns",0],[23941,"trifle",0],[23073,"Berta Block",0],[22929,"おるたんしあ",0],[22804,"NorthGate",0],[22580,"Railsへの執着はもはや煩悩の域であり、開発者一同は瞑想したほうがいいと思います。",0],[22559,"自宅がグー",0],[22506,"Team e2e",0],[22500,"カレーおじさん",0],[22252,"okayama",0],[22006,"Fratty",0],[21703,"Cloudbase-WithClients",0],[21450,"東京都港区白金台5-12-7 MG白金台ビル 4F",0],[21381,"gisan1",0],[21299,"山形組",0],[21108,"バンユナ",0],[21059,"tail",0],[20956,"ほげ",0],[20030,"ECF",0],[19942,"⚔️虚実交錯の🤖サイバー🤖🥷ザムライ🥷 〜🗿オリオン・ブレイズ🔥〜⚔️",0],[19894,"Buzz Zone",0],[19811,"香る明治屋ガロファロ",0],[19387,"なんだろう、遅くするのやめてもらっていいですか？",0],[19151,"OL001",0],[19034,"Pigmin",0],[18842,"あさげ",0],[18780,"フォーム入力でマウスは甘え",0],[18689,"karamaru",0],[18673,"[a, b, u] \u003c- 3σ",0],[18636,"morupoppo",0],[18347,"ちゃん",0],[18287,"msnk",0],[18263,"moozarupepper",0],[18148,"K-razy",0],[17996,"天下n品",0],[17782,"mISU53rd",0],[17724,"SHISUCON",0],[17607,"iguagile",0],[17508,"gannbaru",0],[17405,"ISU",0],[17152,"bamboooo",0],[17051,"元同僚",0],[16817,"メンタイココア",0],[16777,"sasamonとUTHな仲間たち",0],[16764,"うさぎ飢餓",0],[16615,"嫌な所に角がある",0],[16486,"BS5 (Beautiful Stew 5)",0],[16267,"dbgofy",0],[16225,"cktf9",0],[16222,"mukonoso",0],[16057,"entame_andfactory",0],[16057,"NISNIS",0],[16024,"是我痛",0],[15956,"失敗から学ぶISUCONの正しい歩き方 - 葬送のPostgreSQL",0],[15549,"たんぽぽの上の刺身",0],[15524,"フクロウの巣",0],[15421,"カフェインと豆の伝道者",0],[15389,"maximum.baby",0],[15383,"R3d",0],[15317,"rakko",0],[15266,"S",0],[15165,"ogadist",0],[15154,"隅田川レーシング",0],[15109,"あずき色",0],[14995,"慎太郎",0],[14883,"rocky",0],[14858,"クラスアサシン",0],[14304,"VTuberだってISUCONがしたい！",0],[14188,"dyous",0],[14177,"大和田純愛組",0],[14148,"WONDA",0],[14108,"69E0773F-B436-4CC4-B998-B6B143A30EFB",0],[14076,"わかんないッスー!!!",0],[14049,"ネオガーディアンズ",0],[14047,"ピーターパーカー",0],[13962,"3年A組大前先生",0],[13796,"またぼっち",0],[13728,"tanpopo-don",0],[13722,"ゴタンダ・トコロテンズ",0],[13682,"あたまのわるいひと",0],[13580,"うつしもゆ",0],[13505,"激凸上等",0],[13494,"gogo!CHANCE",0],[13469,"ソーダガツオ",0],[13461,"gosoudan5",0],[13357,"respawn",0],[13215,"サウナいきたいです",0],[13204,"厚木を世界一の都市にする委員会",0],[13203,"DOUBLE RAINBOW DREAMS",0],[13152,"なべ太郎",0],[13119,"たこたこ",0],[12971,"新卒こころの同期",0],[12863,"Another",0],[12832,"あいふるとわびさび",0],[12826,"デュアル同好会",0],[12816,"advanced network lab",0],[12799,"チームオガヨシ",0],[12796,"オスカンダル",0],[12715,"戦ELGANA",0],[12653,"ino",0],[12574,"urchin",0],[12550,"afs",0],[12491,"sniff the nekko",0],[12461,"TYM",0],[12348,"素焼きアーモンド(野菜)",0],[12253,"best effort",0],[12201,"dev5_newgrad",0],[12177,"もりもりからし",0],[12150,"mamemame",0],[12101,"ケーキ屋さん見習い",0],[12087,"yuruisucon",0],[12082,"DTLS2010",0],[11993,"ダーッとダッシュでパフォーマンスあげたい",0],[11978,"NOCUSI",0],[11949,"Q職",0],[11912,"MC21",0],[11705,"kemuniku",0],[11665,"NIS",0],[11602,"初めて蟹を見たkofuk",0],[11595,"079",0],[11582,"kb",0],[11496,"真昆布",0],[11450,"らんち",0],[11422,"赤身",0],[11379,"わくわくチーム",0],[11361,"犬度関数",0],[11298,"ayataka",0],[11270,"賞金は借金の返済に充てます",0],[11257,"いすこんがさき、しゅうろうはあと",0],[11236,"SMTP",0],[11194,"blackdragon",0],[11109,"kataokatsuki",0],[11092,"期待の俊英",0],[11016,"Team YVR",0],[10983,"ICE-CREAM-D-SANDWITCH",0],[10983,"ソイジョイ",0],[10941,"bzcat",0],[10909,"snp",0],[10834,"from北海道",0],[10822,"IQ1",0],[10753,"Satsuma Tokyo",0],[10748,"古典部",0],[10722,"ODD",0],[10678,"かえるやさん",0],[10674,"fukafuka",0],[10649,"Hack.BAR",0],[10607,"アイフル・フロンタル",0],[10605,"bignome",0],[10594,"にゃーん",0],[10582,"ネパリカレー [チキン]",0],[10569,"流れ弾",0],[10568,"moudameda",0],[10560,"チーム釣り人",0],[10539,"イーロンマック",0],[10517,"工研",0],[10506,"森田",0],[10477,"example.com",0],[10419,"元同僚_最新_最終版コピー(2)_old決定版_2023最新.xlsx",0],[10414,"blue最高！",0],[10399,"ヘルシープログラマ",0],[10396,"tmp",0],[10360,"はるかさん",0],[10293,"ずっと休日でいいのに",0],[10241,"ボドゲ部",0],[10188,"炉端焼きはどう生きるか",0],[10183,"CONOHA",0],[10105,"あかべこ",0],[10039,"Front/Zero",0],[9999,"ヘリンに恋した",0],[9976,"ギャルに優しいオタク",0],[9938,"梅割り駆動開発",0],[9924,"笑顔を取り戻す",0],[9877,"ていてい",0],[9804,"西新宿电子厂厂姐妹花",0],[9782,"みかん.go",0],[9782,"スシコラ",0],[9764,"SKKR",0],[9754,"takoshi",0],[9659,"Dorayaki",0],[9614,"ハッカーズ・D",0],[9570,"chroe",0],[9566,"DevOpsの褪せ人",0],[9549,"じゅうまる",0],[9529,"ファイトファイトファイファイビーチ",0],[9516,"しなしな",0],[9504,"ぷそ煮込み部",0],[9435,"ヘルスケアハッカーズ",0],[9409,"ジャワカレー中辛",0],[9408,"SDD(眠気ドリブン開発)",0],[9406,"毎日が最終回",0],[9341,"牛乳廃墟新婚旅行",0],[9298,"うぇいぶにゃいだーず",0],[9278,"amago",0],[9275,"IAM apierce",0],[9197,"公立はこだて市営地下鉄",0],[9194,"てげてげ",0],[9126,"すぷりーむ！",0],[9037,"さくたんさんしゅわしゅわしゅわ",0],[9028,"おねんねむにゃむにゃすやすやぴー",0],[8962,"eeeee",0],[8744,"ty",0],[8704,"郷に入ってはGoに従え",0],[8674,"トドナシトドアリトドナシトドトド",0],[8654,"hiroyasuhajime",0],[8565,"waserika連邦共和国",0],[8533,"ネイティのこうそくいどう！",0],[8530,"Campers",0],[8519,"しんかむおん",0],[8486,"ノルコーポレーション",0],[8486,"team yama",0],[8371,"ukarukab",0],[8275,"COCOON",0],[8275,"Team RinRin",0],[8263,"トルネード・ザコチーム",0],[8227,"ATIT",0],[8221,"鷹の肩ガタガタ",0],[8204,"Orange",0],[8184,"カエルまんじゅう",0],[8125,"East Lab",0],[8047,"kattak",0],[8041,"冴えないWebサービスの育てかた Fine",0],[7970,"ozakoji",0],[7943,"ニラのチヂミ",0],[7940,"パワーショットメガジョッキ連合",0],[7860,"UFT",0],[7845,"beliefarrow",0],[7818,"範馬Nodejs",0],[7805,"今日のランチはいいスコーン",0],[7786,"fj-donuts",0],[7749,"羽二重餅 🆚 胡桃柚餅子 🆚 チーズ醤油餅",0],[7738,"グルシン",0],[7725,"yuruisu",0],[7714,"日々楽しく開発しています",0],[7696,"新宿動物園",0],[7620,"ドデリド",0],[7619,"ハリー・ポインターと賢者のEC2",0],[7614,"fresh_2021@#3E64A0",0],[7562,"horiuchi",0],[7537,"Optimize Otaku",0],[7530,"Xx_Hayami_xX",0],[7509,"yamalex",0],[7484,"夜のさいたま新都心共和国",0],[7479,"sengine-xyz",0],[7475,"TOYOHAMAS",0],[7422,"カレー大好き",0],[7400,"projectfood",0],[7356,"MVELers",0],[7298,"ST",0],[7272,"GoSalesCareNeet",0],[7271,"[object Object]",0],[7271,"oshimin",0],[7264,"fugusuki",0],[7260,"よんなー",0],[7228,"品川ラーメン",0],[7212,"TPU OB",0],[7159,"Maximum.mum",0],[7152,"avengers",0],[7108,"山のスパゲッティ牧場",0],[7097,"omikuji",0],[7083,"銀河鉄道の昼",0],[7056,"bocchiez",0],[7036,"マジックメイズ",0],[7016,"Baby Buffer Buddies",0],[6978,"and-period",0],[6969,"kstm",0],[6915,"aa",0],[6909,"gogo511",0],[6888,"ISU娘 お嬢様部",0],[6885,"あしたから本気だす",0],[6879,"QPM",0],[6829,"appo",0],[6793,"slasher",0],[6788,"YO!HEYHEYHEY!",0],[6786,"メタルスタイム野郎",0],[6739,"King Of Fighters",0],[6726,"ひとといと",0],[6667,"忖度",0],[6589,"きちぴー",0],[6551,"50TA",0],[6496,"ふが",0],[6464,"RTA in traP",0],[6438,"team Darjeeling",0],[6429,"ichigen",0],[6428,"indo8",0],[6393,"アマミホシゾラフグ",0],[6381,"ぽよ〜",0],[6348,"無限酢昆布",0],[6282,"tychy",0],[6259,"激辛gRPC",0],[6193,"ジャックすぱじろう",0],[6181,"ThreeRedCircles",0],[6087,"ccc",0],[6047,"バーチャルカムパネルラ",0],[5925,"distressing",0],[5879,"MustBeString",0],[5848,"1' or '1' = '1';--",0],[5783,"FRiendlyQuartz",0],[5778,"kenta's children",0],[5736,"Rivers",0],[5735,"チームN",0],[5725,"kikuko72 team",0],[5715,"バスケやりたい",0],[5636,"pythonista",0],[5628,"カルニタス",0],[5612,"smirror",0],[5543,"nikisu",0],[5534,"エッセンシャルガチ草ﾄﾒｨﾄｩ",0],[5505,"ワンランク上のジロリアン",0],[5437,"パスカルダビンチ",0],[5413,"Triple Triple",0],[5348,"ノーコード！",0],[5338,"† Valhalla †",0],[5338,"TeamGI",0],[5336,"kst",0],[5320,"伸び代たくさん",0],[5297,"MNN",0],[5280,"天上天下唯猫独尊",0],[5238,"imaharu",0],[5223,"EMoshU学生チーム",0],[5205,"saba-can",0],[5190,"らぎハウス",0],[5183,"n+1度目の正直",0],[5167,"ぐは",0],[5142,"sleepyfox",0],[5100,"sus1000000",0],[5084,"Dian Cécht",0],[5082,"bros",0],[5065,"デッドリフト同好会",0],[5056,"GG",0],[5055,"電話する牛",0],[5030,"ishikawa_pro",0],[5014,"ISUCON完全に理解した",0],[5014,"頑張るおじさん",0],[5006,"EAGLEJUMP",0],[5003,"h6g",0],[4981,"THE 健康",0],[4979,"ガブリチキン",0],[4879,"あなわる",0],[4856,"アスタキサンチン",0],[4814,"nekotoast",0],[4812,"beginner's luck",0],[4775,"全集中の呼吸",0],[4771,"初心者",0],[4761,"GCTrip",0],[4746,"高層のFREE LAN",0],[4710,"( ˘ω˘)",0],[4686,"CONAC",0],[4618,"takak",0],[4557,"Yaruyara",0],[4532,"odango",0],[4487,"忘却のビアガーデン",0],[4456,"Team HaKoYo",0],[4371,"グラップラーPHP",0],[4359,"tracia gaming",0],[4346,"りりり",0],[4320,"富ヶ谷飯店",0],[4293,"ミノキシジルフィナステリド",0],[4281,"highendtapioca",0],[4259,"2GMon",0],[4204,"minma",0],[4190,"u-aizu.ob",0],[4185,"N00b",0],[4158,"markie",0],[4140,"パリパリ餃子",0],[4132,"Ryusenji",0],[4109,"プロプロンプトエンジニア",0],[4107,"えしし",0],[4096,"ねことコーヒー",0],[4088,"Infant Engineer",0],[4073,"たなか",0],[3975,"citruz.dev",0],[3966,"いんたーねっとになりたい",0],[3949,"rerost",0],[3946,"Y",0],[3931,"コノシロ",0],[3930,"北京原人",0],[3910,"imu",0],[3890,"てんぷ",0],[3851,"いい感じに集った人たち",0],[3849,"SBKZ",0],[3833,"やっぱりふじさんのぼりたい",0],[3752,"bochibochi",0],[3750,"mob",0],[3750,"sohmens",0],[3736,"Virtual ISUCON Live!",0],[3726,"iscn0",0],[3722,"skmo",0],[3715,"K3",0],[3711,"リトライスクレイパーコラボ",0],[3700,"イケイケフクロウ",0],[3700,"toka",0],[3689,"よっこい",0],[3672,"上野幌なまらいいとこ",0],[3665,"CC",0],[3646,"Dinosaur",0],[3646,"chiru1221",0],[3635,"キャベツ株式会社",0],[3566,"下北沢のツチノコ",0],[3547,"餅屋",0],[3547,"とがった",0],[3543,"ピスタチオ",0],[3537,"hakodate",0],[3530,"La estacion de Kajigaya",0],[3518,"SIKTAK",0],[3464,"UCOINS",0],[3461,"マッシュと愉快な仲間たち",0],[3448,"s-tokatu",0],[3421,"おさかな",0],[3396,"RICORA",0],[3371,"秋が好き",0],[3357,"IsuCox",0],[3335,"iron1",0],[3307,"ラスカル1号",0],[3118,"tekuteku",0],[3117,"てｓｔ",0],[3052,"自動雀卓欲しい",0],[2673,"チーム優勝するまで帰らないゾ",0],[2577,"カルパッチョ",0],[2562,"DHC",0],[2538,"ツイキャスみてると一日終わるのなぁぜなぁぜ",0],[2288,"SysCa",0],[614,":thinking_face:",0]],"failed":[[227377,"都営三田線東急目黒線直通急行日吉行","再起動後のデータチェックで不整合があったため"],[106457,"ツナ缶","再起動後のデータチェックで不整合があったため"],[83615,"ナニモワカラナイ","再起動後のデータチェックで不整合があったため"],[51172,"init S","再起動後のデータチェックで不整合があったため"],[33673,"HEAVIEST OBJECTS IN THE UNIVERSE (./target)","再起動後のスコアが75%以下であったため"],[56180,"GCF","再起動後スコア0"],[44820,"掃除当番","再起動後スコア0"],[43613,"k2","再起動後スコア0"],[43569,"SNE","再起動後スコア0"],[41297,"hirocy","再起動後スコア0"],[33646,"Team PortalKey","再起動後スコア0"],[26386,"運用週","再起動後スコア0"],[25344,"Internal Server Error","再起動後スコア0"],[23745,"TF","再起動後スコア0"],[22284,"ゆね～る","再起動後スコア0"],[20036,"大崎屋","再起動後スコア0"],[19827,"team rdk","再起動後スコア0"],[19651,"nabemaru","再起動後スコア0"],[16823,"と","再起動後スコア0"],[16292,"頂で寿司を食べたい","再起動後スコア0"],[15730,"トロピカルだねぇ！","再起動後スコア0"],[14631,"ぞい","再起動後スコア0"],[13835,"FossaMagna","再起動後スコア0"],[13758,"osu-kannon","再起動後スコア0"],[13694,"Studio","再起動後スコア0"],[13144,"halcyon lunch","再起動後スコア0"],[11473,"へしこず","再起動後スコア0"],[10865,"すたあらいと","再起動後スコア0"],[10663,"sue445.members.count==1","再起動後スコア0"],[10530,"ほぼスーパー楕円","再起動後スコア0"],[9862,"元m社","再起動後スコア0"],[9799,"妄想実行部隊","再起動後スコア0"],[9350,"まりまりまりるん","再起動後スコア0"],[8867,"王立加速器","再起動後スコア0"],[8682,"suburi","個別にご連絡しています"],[8513,"FPaS","再起動後スコア0"],[7421,"ピザはバランス良い","再起動後スコア0"],[7014,"えびたま","再起動後スコア0"],[6495,"ぐるぐるdocker〜ん","再起動後スコア0"],[6479,"cryptid","再起動後スコア0"],[6127,"SSS","再起動後スコア0"],[5376,"屋台","再起動後スコア0"],[4409,"塩昆布","再起動後スコア0"],[4104,"floret","個別にご連絡しています"],[4034,"GTO","再起動後スコア0"],[3977,"えびぃ","再起動後スコア0"],[3897,"豆腐メンタル","再起動後スコア0"],[3785,"たくあんの味噌煮","再起動後スコア0"],[3522,"matsuge","再起動後スコア0"],[3464,"thhisu","個別にご連絡しています"],[3438,"okwrtdsh","再起動後スコア0"],[3402,"ちゅ、揮発性。","再起動後スコア0"],[3270,"さんぽ駆動開発","再起動後スコア0"],[3239,"maca","再起動後スコア0"],[3203,"challenge club","個別にご連絡しています"],[3193,"KST_20","再起動後スコア0"],[3175,"理大祭よりISUCONがしたい！","再起動後スコア0"],[2931,"YOYOGI KEEPS","再起動後スコア0"],[2919,"キングギドラ","個別にご連絡しています"],[2917,"BKOLD","個別にご連絡しています"],[2754,"午後のリポジトリ","個別にご連絡しています"],[2628,"enj","再起動後スコア0"],[1660,"酒池肉林","個別にご連絡しています"],[646,"パンの耳","再起動後スコア0"],[0,"Smiling Face with Halo","最終スコア0"],[0,"焼肉ジャンボチキン","最終スコア0"],[0,"alert-driven","最終スコア0"],[0,"うどんきれいなGo","最終スコア0"],[0,"westlab","最終スコア0"],[0,"TBD","最終スコア0"],[0,"oops","最終スコア0"],[0,"太郎","最終スコア0"],[0,"NINO","最終スコア0"],[0,"てむず","最終スコア0"],[0,"INUCON 13(いい感じに猫を動かすコンテスト ワン!ミャ～)","最終スコア0"],[0,"あとで名前を考える","最終スコア0"],[0,"きなこ","最終スコア0"],[0,"hidekiy","最終スコア0"],[0,"team-yyy","最終スコア0"],[0,"やる気あるささきさん","最終スコア0"],[0,"腐羅亜","最終スコア0"],[0,"健康第一","最終スコア0"],[0,"DrinkAndRoot","最終スコア0"],[0,"おれたちの","最終スコア0"],[0,"I(行きたかったイベントと)S(スケジュールが)U(unfortunately)CON(conflict)","最終スコア0"],[0,"RE: ゼロから始めるISUCON","最終スコア0"],[0,"とりあえずモヒート","最終スコア0"],[0,"ふぃじビリ","最終スコア0"],[0,"サウナ行きたい","最終スコア0"],[0,"ᓚᘏᗢ ᓚᘏᗢ","最終スコア0"],[0,"KOALA","個別にご連絡しています"],[0,"聖なるアラートヶ丘","最終スコア0"],[0,"mkiuchi","最終スコア0"],[0,"かきあげせいろ定食","最終スコア0"],[0,"天空の玉子","最終スコア0"],[0,"年子タイムズ","最終スコア0"],[0,"アイフル・デュプレックス","最終スコア0"],[0,"DACHICON","最終スコア0"],[0,"HRZN","最終スコア0"],[0,"会社の犬","最終スコア0"],[0,"パフォチュウげんきでちゅう","最終スコア0"],[0,"ディロォイ タァニーキー","最終スコア0"],[0,"硬め濃いめ","最終スコア0"],[0,"返るか現象","最終スコア0"],[0,"gododa","最終スコア0"],[0,"おねだりAPP","最終スコア0"],[0,"yharima","最終スコア0"],[0,"ハッピーベンチマーク週間","最終スコア0"],[0,"焦がしにんにく","最終スコア0"],[0,"まるまラーメン","最終スコア0"],[0,"かなたそ","最終スコア0"],[0,"パイナップル家","最終スコア0"],[0,"しょうゆだしパーク","最終スコア0"],[0,"運動不足","最終スコア0"],[0,"サイクルスコープ","最終スコア0"],[0,"gorou","最終スコア0"],[0,"DH","最終スコア0"],[0,"console.log","最終スコア0"],[0,"目黒ワンニャンパーク","最終スコア0"],[0,"T3","最終スコア0"],[0,"cc2","最終スコア0"],[0,"水野研","最終スコア0"],[0,"nakatanakatana","最終スコア0"],[0,"HCN","最終スコア0"],[0,"ponponpain","最終スコア0"],[0,"蒟蒻畑","最終スコア0"],[0,"BaseBrea道","最終スコア0"],[0,"ハッピーブリリアンツ","最終スコア0"],[0,"harumaki","最終スコア0"],[0,"Happy Island","最終スコア0"],[0,"ophiuchus-two","最終スコア0"],[0,"K","最終スコア0"],[0,"MMM","最終スコア0"],[0,"中井ゲームス","最終スコア0"],[0,"ちゃ","最終スコア0"],[0,"新橋サラリーマン","最終スコア0"],[0,"こやーん","最終スコア0"],[0,"cometcandy","最終スコア0"],[0,"N.Matsuda","最終スコア0"],[0,"SRE（仮）","最終スコア0"],[0,"MNY","最終スコア0"],[0,"あとで決める","最終スコア0"],[0,"Quavallers","最終スコア0"],[0,"take","最終スコア0"],[0,"今年こそDartでダーっとパフォーマンス10x","最終スコア0"],[0,"しろけん","最終スコア0"],[0,"sudo rm -rf / --no-preseve-root","最終スコア0"],[0,"indigonightism","最終スコア0"],[0,"Web Operators","スコア登録なし"],[0,"あばば","スコア登録なし"],[0,"o8n","スコア登録なし"],[0,"スコーピオン","スコア登録なし"],[0,"critical-Kanade","スコア登録なし"],[0,"寝坊遅刻早退夜更かし","スコア登録なし"],[0,"メグ","個別にご連絡しています"]]}</script>
+<script>
+(() => {
+  const DATA = JSON.parse(document.getElementById("data").textContent);
+  const passed = DATA.passed.map(([score, team, student]) => ({ score, team, student }));
+  const failed = DATA.failed.map(([score, team, reason]) => ({ score, team, reason }));
+  const N = passed.length;
+  passed.forEach((t, i) => { t.rank = i > 0 && passed[i - 1].score === t.score ? passed[i - 1].rank : i + 1; });
+
+  const BASELINE = 3673;
+  const PRACTICE = [
+    { label: "Go の初期実装（記事の 10X 賞の説明より、運営の環境）", score: BASELINE },
+  ];
+  const MID = Math.ceil(N / 2);
+  const MILESTONES = [1, 3, 10, 30, 50, 100, 150, 200, MID, 300, 400, 500];
+  const REASON_LABEL = {
+    "最終スコア0": "最終スコア 0",
+    "再起動後スコア0": "再起動後スコア 0",
+    "個別にご連絡しています": "個別に連絡",
+    "スコア登録なし": "スコア登録なし",
+    "再起動後のデータチェックで不整合があったため": "再起動後のデータ不整合",
+    "再起動後のスコアが75%以下であったため": "再起動後 75% 以下",
+  };
+  const reasonOf = (t) => REASON_LABEL[t.reason] || t.reason;
+
+  const fmt = (n) => n.toLocaleString("ja-JP");
+  const pct = (r) => (r / N * 100).toFixed(r / N < 0.1 ? 1 : 0) + "%";
+  // passed は降順。x より高いチームの数 + 1 が x の順位。
+  const rankOf = (x) => {
+    let lo = 0, hi = N;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (passed[mid].score > x) lo = mid + 1; else hi = mid; }
+    return lo + 1;
+  };
+  const median = N % 2 ? passed[(N - 1) / 2].score : Math.round((passed[N / 2 - 1].score + passed[N / 2].score) / 2);
+  const el = (tag, attrs = {}, text) => {
+    const e = document.createElement(tag);
+    Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+    if (text !== undefined) e.textContent = text;
+    return e;
+  };
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const svgEl = (tag, attrs = {}, text) => {
+    const e = document.createElementNS(SVG_NS, tag);
+    Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+    if (text !== undefined) e.textContent = text;
+    return e;
+  };
+  const row = (cells) => {
+    const tr = el("tr");
+    cells.forEach(([text, cls]) => tr.appendChild(el("td", cls ? { class: cls } : {}, text)));
+    return tr;
+  };
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const kfmt = (v) => v >= 1000 ? `${v / 1000}K` : String(v);
+
+  // 1. 概要
+  const total = N + failed.length;
+  document.getElementById("k-total").textContent = fmt(total);
+  document.getElementById("k-passed").textContent = fmt(N);
+  document.getElementById("k-failed").textContent = `${fmt(failed.length)}（${Math.round(failed.length / total * 100)}%）`;
+  document.getElementById("k-median").textContent = fmt(median);
+  document.getElementById("k-top").textContent = fmt(passed[0].score);
+  document.getElementById("n-passed").textContent = fmt(N);
+  document.getElementById("n-ties").textContent = `${passed.filter((t, i) => passed.some((u, j) => j !== i && u.score === t.score)).length} チーム`;
+
+  // 3. 早見表
+  const mBody = document.querySelector("#milestone-table tbody");
+  MILESTONES.filter((r) => r <= N).concat([N]).filter((v, i, a) => a.indexOf(v) === i).forEach((r) => {
+    const t = passed[r - 1];
+    mBody.appendChild(row([[`${r} 位${r === MID ? "（中央）" : ""}${r === N ? "（最下位）" : ""}`, "num"], [pct(r), "num"], [fmt(t.score), "num"], [t.team + (t.student ? " ※" : "")], [`${(t.score / BASELINE).toFixed(1)} 倍`, "num"]]));
+  });
+
+  // 4. 順位とスコアの曲線
+  const curveSvg = document.getElementById("curve-svg");
+  const curveTip = document.getElementById("curve-tip");
+  const logToggle = document.getElementById("log-toggle");
+  const C = { w: 880, h: 340, l: 56, r: 20, t: 16, b: 40 };
+  let currentScore = BASELINE;
+
+  const drawCurve = () => {
+    curveSvg.replaceChildren();
+    const log = logToggle.checked;
+    const yMin = log ? 500 : 0, yMax = 500000;
+    const x = (rank) => C.l + (rank - 1) / (N - 1) * (C.w - C.l - C.r);
+    const y = (s) => {
+      const v = log ? (Math.log10(Math.max(s, yMin)) - Math.log10(yMin)) / (Math.log10(yMax) - Math.log10(yMin)) : (s - yMin) / (yMax - yMin);
+      return C.h - C.b - v * (C.h - C.t - C.b);
+    };
+    const ticks = log ? [500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000] : [0, 100000, 200000, 300000, 400000, 500000];
+    const axis = svgEl("g", { class: "axis" });
+    ticks.forEach((v) => {
+      axis.appendChild(svgEl("line", { x1: C.l, x2: C.w - C.r, y1: y(v), y2: y(v), stroke: css("--grid"), "stroke-width": 1 }));
+      axis.appendChild(svgEl("text", { x: C.l - 8, y: y(v) + 4, "text-anchor": "end" }, kfmt(v)));
+    });
+    [1, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500].forEach((r) => {
+      axis.appendChild(svgEl("text", { x: x(r), y: C.h - C.b + 18, "text-anchor": "middle" }, `${r}`));
+    });
+    axis.appendChild(svgEl("text", { x: C.w - C.r, y: C.h - 4, "text-anchor": "end" }, "順位"));
+    curveSvg.appendChild(axis);
+
+    const pathD = passed.map((t, i) => `${i ? "L" : "M"}${x(i + 1).toFixed(1)},${y(t.score).toFixed(1)}`).join("");
+    curveSvg.appendChild(svgEl("path", { d: `${pathD}L${x(N)},${y(yMin)}L${x(1)},${y(yMin)}Z`, fill: css("--accent"), opacity: 0.1 }));
+    curveSvg.appendChild(svgEl("path", { d: pathD, fill: "none", stroke: css("--accent"), "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+
+    PRACTICE.forEach((p) => {
+      const r = rankOf(p.score);
+      curveSvg.appendChild(svgEl("circle", { cx: x(Math.min(r, N)), cy: y(p.score), r: 4, fill: css("--card"), stroke: css("--fg"), "stroke-width": 1.5 }));
+    });
+    const rIn = rankOf(currentScore);
+    if (currentScore > 0) {
+      const cx = x(Math.min(rIn, N)), cy = y(currentScore);
+      curveSvg.appendChild(svgEl("circle", { cx, cy, r: 7, fill: css("--card") }));
+      curveSvg.appendChild(svgEl("circle", { cx, cy, r: 5, fill: css("--fg") }));
+      const label = rIn > N ? `入力 ${fmt(currentScore)} → 最下位より下` : `入力 ${fmt(currentScore)} → ${rIn} 位`;
+      const right = cx > C.w * 0.8;
+      curveSvg.appendChild(svgEl("text", { class: "label strong", x: right ? cx - 10 : cx + 10, y: cy - 10, "text-anchor": right ? "end" : "start" }, label));
+    }
+
+    const cross = svgEl("line", { y1: C.t, y2: C.h - C.b, stroke: css("--muted"), "stroke-width": 1, visibility: "hidden" });
+    const dot = svgEl("circle", { r: 4, fill: css("--accent"), stroke: css("--card"), "stroke-width": 2, visibility: "hidden" });
+    curveSvg.appendChild(cross);
+    curveSvg.appendChild(dot);
+    const hit = svgEl("rect", { x: C.l, y: C.t, width: C.w - C.l - C.r, height: C.h - C.t - C.b, fill: "transparent" });
+    curveSvg.appendChild(hit);
+    const move = (ev) => {
+      const box = curveSvg.getBoundingClientRect();
+      const sx = (ev.clientX - box.left) / box.width * C.w;
+      const i = Math.max(0, Math.min(N - 1, Math.round((sx - C.l) / (C.w - C.l - C.r) * (N - 1))));
+      const t = passed[i];
+      const px = x(i + 1), py = y(t.score);
+      cross.setAttribute("x1", px); cross.setAttribute("x2", px); cross.setAttribute("visibility", "visible");
+      dot.setAttribute("cx", px); dot.setAttribute("cy", py); dot.setAttribute("visibility", "visible");
+      curveTip.replaceChildren(el("div", {}, `${t.rank} 位（上位 ${pct(t.rank)}）`), el("div", {}, `${fmt(t.score)} 点`), el("div", {}, t.team + (t.student ? " ※" : "")));
+      curveTip.style.display = "block";
+      const host = curveTip.parentElement.getBoundingClientRect();
+      const left = ev.clientX - host.left + 14;
+      curveTip.style.left = `${Math.min(left, host.width - curveTip.offsetWidth - 8)}px`;
+      curveTip.style.top = `${py / C.h * box.height + (box.top - host.top) - 10}px`;
+    };
+    hit.addEventListener("pointermove", move);
+    hit.addEventListener("pointerleave", () => { curveTip.style.display = "none"; cross.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); });
+  };
+  logToggle.addEventListener("change", drawCurve);
+
+  const pBody = document.getElementById("practice-table");
+  PRACTICE.forEach((p) => {
+    const r = rankOf(p.score);
+    const tr = row([[p.label], [fmt(p.score), "num"], [r > N ? "圏外" : `${r} 位`, "num"], [r > N ? "-" : pct(r), "num"]]);
+    if (p.score === BASELINE) tr.classList.add("me");
+    pBody.appendChild(tr);
+  });
+
+  // 5. 分布（最後の区間は 100,000 点以上をまとめる）
+  const BIN = 5000, BINS = 21;
+  const counts = Array(BINS).fill(0);
+  passed.forEach((t) => { counts[Math.min(BINS - 1, Math.floor(t.score / BIN))]++; });
+  const histSvg = document.getElementById("hist-svg");
+  const histTip = document.getElementById("hist-tip");
+  const H = { w: 880, h: 300, l: 44, r: 12, t: 14, b: 40 };
+  const binLabel = (i) => i === BINS - 1 ? `${fmt(i * BIN)}〜` : `${fmt(i * BIN)}〜${fmt((i + 1) * BIN - 1)}`;
+  const drawHist = () => {
+    histSvg.replaceChildren();
+    const STEP = 40;
+    const maxC = Math.ceil(Math.max(...counts) / STEP) * STEP;
+    const slot = (H.w - H.l - H.r) / BINS;
+    const bw = Math.min(28, slot - 4);
+    const y = (c) => H.h - H.b - c / maxC * (H.h - H.t - H.b);
+    const axis = svgEl("g", { class: "axis" });
+    for (let v = 0; v <= maxC; v += STEP) {
+      axis.appendChild(svgEl("line", { x1: H.l, x2: H.w - H.r, y1: y(v), y2: y(v), stroke: css("--grid"), "stroke-width": 1 }));
+      axis.appendChild(svgEl("text", { x: H.l - 8, y: y(v) + 4, "text-anchor": "end" }, String(v)));
+    }
+    [0, 25000, 50000, 75000].forEach((v) => {
+      axis.appendChild(svgEl("text", { x: H.l + v / BIN * slot, y: H.h - H.b + 18, "text-anchor": "middle" }, v ? kfmt(v) : "0"));
+    });
+    axis.appendChild(svgEl("text", { x: H.l + (BINS - 0.5) * slot, y: H.h - H.b + 18, "text-anchor": "middle" }, "100K〜"));
+    axis.appendChild(svgEl("text", { x: H.w - H.r, y: H.h - 4, "text-anchor": "end" }, "スコア"));
+    histSvg.appendChild(axis);
+    const cur = Math.min(BINS - 1, Math.floor(currentScore / BIN));
+    counts.forEach((c, i) => {
+      const bx = H.l + i * slot + (slot - bw) / 2;
+      const g = svgEl("g");
+      if (c > 0) {
+        const top = y(c), bottom = y(0), rr = Math.min(4, bottom - top);
+        const d = `M${bx},${bottom}V${top + rr}Q${bx},${top} ${bx + rr},${top}H${bx + bw - rr}Q${bx + bw},${top} ${bx + bw},${top + rr}V${bottom}Z`;
+        g.appendChild(svgEl("path", { d, fill: i === cur ? css("--accent") : css("--accent-light") }));
+      }
+      const hitR = svgEl("rect", { x: H.l + i * slot, y: H.t, width: slot, height: H.h - H.t - H.b, fill: "transparent" });
+      hitR.addEventListener("pointermove", (ev) => {
+        histTip.replaceChildren(el("div", {}, `${binLabel(i)} 点`), el("div", {}, `${c} チーム`));
+        histTip.style.display = "block";
+        const host = histTip.parentElement.getBoundingClientRect();
+        histTip.style.left = `${Math.min(ev.clientX - host.left + 14, host.width - histTip.offsetWidth - 8)}px`;
+        histTip.style.top = `${ev.clientY - host.top - 40}px`;
+      });
+      hitR.addEventListener("pointerleave", () => { histTip.style.display = "none"; });
+      g.appendChild(hitR);
+      histSvg.appendChild(g);
+    });
+  };
+  const hBody = document.getElementById("hist-table");
+  let acc = 0;
+  for (let i = BINS - 1; i >= 0; i--) {
+    acc += counts[i];
+    if (counts[i]) hBody.appendChild(row([[`${binLabel(i)} 点`], [String(counts[i]), "num"], [String(acc), "num"]]));
+  }
+
+  // 6. fail
+  const reasons = {};
+  failed.forEach((t) => { const k = reasonOf(t); reasons[k] = (reasons[k] || 0) + 1; });
+  document.getElementById("f-total").textContent = fmt(total);
+  document.getElementById("f-count").textContent = fmt(failed.length);
+  document.getElementById("f-pct").textContent = `${Math.round(failed.length / total * 100)}%`;
+  const maxR = Math.max(...Object.values(reasons));
+  const bars = document.getElementById("fail-bars");
+  Object.entries(reasons).sort((a, b) => b[1] - a[1]).forEach(([reason, c]) => {
+    const r = el("div", { class: "hbar-row" });
+    r.appendChild(el("div", {}, reason));
+    const track = el("div", { class: "hbar-track" });
+    const w = c / maxR * 85;
+    const bar = el("div", { class: "hbar" });
+    bar.style.width = `${w}%`;
+    track.appendChild(bar);
+    const v = el("span", { class: "hbar-val" }, `${c}`);
+    v.style.left = `calc(${w}% + 6px)`;
+    track.appendChild(v);
+    r.appendChild(track);
+    bars.appendChild(r);
+  });
+  const fTop = document.getElementById("fail-top");
+  failed.filter((t) => t.score > 0).sort((a, b) => b.score - a.score).slice(0, 10).forEach((t) => {
+    const r = rankOf(t.score);
+    fTop.appendChild(row([[fmt(t.score), "num"], [`${r} 位相当`, "num"], [t.team], [reasonOf(t)]]));
+  });
+
+  // 8. 一覧
+  document.getElementById("all-count").textContent = `${fmt(N)} チーム`;
+  document.getElementById("fail-count2").textContent = `${fmt(failed.length)} チーム`;
+  const allBody = document.getElementById("all-table");
+  const allRows = passed.map((t) => {
+    const tr = row([[`${t.rank}`, "num"], [fmt(t.score), "num"], [t.team], [t.student ? "※" : ""]]);
+    allBody.appendChild(tr);
+    return { tr, key: `${t.team} ${t.score} ${fmt(t.score)}`.toLowerCase() };
+  });
+  const failBody = document.getElementById("fail-table");
+  const failRows = failed.map((t) => {
+    const tr = row([[fmt(t.score), "num"], [t.team], [reasonOf(t)]]);
+    failBody.appendChild(tr);
+    return { tr, key: `${t.team} ${reasonOf(t)} ${t.reason} ${t.score}`.toLowerCase() };
+  });
+  const bindFilter = (input, rows) => input.addEventListener("input", () => {
+    const q = input.value.trim().toLowerCase();
+    rows.forEach(({ tr, key }) => { tr.style.display = !q || key.includes(q) ? "" : "none"; });
+  });
+  bindFilter(document.getElementById("all-filter"), allRows);
+  bindFilter(document.getElementById("fail-filter"), failRows);
+
+  // 2. 順位検索
+  const input = document.getElementById("score-input");
+  const chips = document.getElementById("chips");
+  PRACTICE.forEach((p) => {
+    const b = el("button", { type: "button", class: "chip" }, `${p.label.replace(/（.*$/, "")}: ${fmt(p.score)}`);
+    b.addEventListener("click", () => { input.value = p.score; update(); });
+    chips.appendChild(b);
+  });
+  [["中央値", median], ["上位 100 位", passed[99].score], ["上位 30 位", passed[29].score], ["上位 10 位", passed[9].score]].forEach(([label, s]) => {
+    const b = el("button", { type: "button", class: "chip" }, `${label}: ${fmt(s)}`);
+    b.addEventListener("click", () => { input.value = s; update(); });
+    chips.appendChild(b);
+  });
+
+  const update = () => {
+    const s = Math.max(0, Math.floor(Number(input.value) || 0));
+    currentScore = s;
+    const r = rankOf(s);
+    const rankEl = document.getElementById("r-rank");
+    const sub = document.getElementById("r-sub");
+    const nb = document.getElementById("r-neighbors");
+    const nx = document.getElementById("r-next");
+    nb.replaceChildren(); nx.replaceChildren();
+    if (r > N) {
+      rankEl.replaceChildren(document.createTextNode("圏外"), el("small", {}, `最下位（${fmt(passed[N - 1].score)} 点）より下`));
+      sub.textContent = `順位が付いたのは ${fmt(N)} チーム。この点数でも、fail さえしなければ ${fmt(N + 1)} 位として順位は付く。`;
+    } else {
+      rankEl.replaceChildren(document.createTextNode(`${r} 位`), el("small", {}, `/ ${fmt(N)} チーム（上位 ${pct(r)}）`));
+      sub.textContent = `${fmt(s)} 点より高いチームが ${fmt(r - 1)} チームある。`;
+    }
+    if (r >= 2) {
+      const a = passed[r - 2];
+      nb.appendChild(el("li", {}, `1 つ上: ${a.rank} 位 ${a.team}（${fmt(a.score)} 点、あと +${fmt(a.score - s)}）`));
+    }
+    if (r <= N) {
+      const b = passed[r - 1];
+      nb.appendChild(el("li", {}, `${b.score === s ? "同点" : "すぐ下"}: ${b.rank} 位 ${b.team}（${fmt(b.score)} 点）`));
+    }
+    if (!nb.children.length) nb.appendChild(el("li", {}, "-"));
+    const next = MILESTONES.filter((m) => m <= N && passed[m - 1].score > s).reverse().slice(0, 4);
+    next.forEach((m) => {
+      const need = passed[m - 1].score;
+      nx.appendChild(el("li", {}, `${m} 位以内（${fmt(need)} 点）まで +${fmt(need - s)}（${(need / Math.max(s, 1)).toFixed(1)} 倍）`));
+    });
+    if (!next.length) nx.appendChild(el("li", {}, r === 1 ? "1 位" : "-"));
+    drawCurve();
+    drawHist();
+  };
+  input.addEventListener("input", update);
+  update();
+})();
+</script>
+<script>
+(() => {
+  const body = document.body;
+  // 章（data-nav-group）と小項目（data-nav-item）を文書の順に拾う。章は section でも見出しでもよい。
+  const entries = [...document.querySelectorAll("[id][data-nav-group], [id][data-nav-item]")];
+  if (!entries.some((el) => el.dataset.navGroup)) return;
+
+  const nav = document.createElement("nav");
+  nav.className = "side-nav";
+  const title = body.dataset.navTitle || document.querySelector("h1")?.textContent.trim() || document.title;
+  const sub = body.dataset.navSubtitle || "";
+  nav.innerHTML = `<div class="nav-head"><p class="nav-title"></p><p class="nav-sub"></p></div>
+    <div class="nav-search"><input type="search" placeholder="章を検索"></div>`;
+  nav.querySelector(".nav-title").textContent = title;
+  nav.querySelector(".nav-sub").textContent = sub;
+
+  const links = [];
+  const groups = new Map();
+  let currentGroup = null;
+  const addLink = (parent, target, text, isSub) => {
+    const a = document.createElement("a");
+    a.href = `#${target.id}`;
+    a.textContent = text;
+    if (isSub) a.classList.add("sub");
+    parent.appendChild(a);
+    links.push({ a, target });
+  };
+  entries.forEach((el) => {
+    if (el.dataset.navGroup) {
+      const name = el.dataset.navGroup;
+      if (!groups.has(name)) {
+        const g = document.createElement("div");
+        g.className = "nav-group";
+        g.innerHTML = '<div class="nav-group-title"></div>';
+        g.firstChild.textContent = name;
+        nav.appendChild(g);
+        groups.set(name, g);
+      }
+      currentGroup = groups.get(name);
+      const heading = el.matches("h1, h2, h3, h4") ? el : el.querySelector("h2, h3");
+      addLink(currentGroup, el, el.dataset.navLabel || heading?.textContent.trim() || el.id, false);
+    } else if (currentGroup) {
+      addLink(currentGroup, el, el.dataset.navItem, true);
+    }
+  });
+
+  // 開閉ボタン。閉じた状態はブラウザに覚えさせる（保存できない環境では毎回開いた状態で表示する）。
+  const STORAGE_KEY = "report-side-nav-collapsed";
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "side-nav-toggle";
+  const setCollapsed = (collapsed) => {
+    body.classList.toggle("side-nav-collapsed", collapsed);
+    toggle.textContent = collapsed ? "☰" : "«";
+    toggle.title = collapsed ? "目次を開く" : "目次を閉じる";
+    toggle.setAttribute("aria-expanded", String(!collapsed));
+    try { localStorage.setItem(STORAGE_KEY, collapsed ? "1" : "0"); } catch (_) {}
+  };
+  toggle.addEventListener("click", () => setCollapsed(!body.classList.contains("side-nav-collapsed")));
+  let initiallyCollapsed = false;
+  try { initiallyCollapsed = localStorage.getItem(STORAGE_KEY) === "1"; } catch (_) {}
+
+  body.prepend(nav);
+  body.prepend(toggle);
+  body.classList.add("has-side-nav");
+  setCollapsed(initiallyCollapsed);
+
+  nav.querySelector("input").addEventListener("input", (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    links.forEach(({ a }) => a.classList.toggle("hidden", q !== "" && !a.textContent.toLowerCase().includes(q)));
+    groups.forEach((g) => g.classList.toggle("hidden", [...g.querySelectorAll("a")].every((a) => a.classList.contains("hidden"))));
+  });
+
+  const setActive = () => {
+    let current = links[0];
+    links.forEach((l) => { if (l.target.getBoundingClientRect().top <= 80) current = l; });
+    links.forEach((l) => l.a.classList.toggle("active", l === current));
+  };
+  document.addEventListener("scroll", setActive, { passive: true });
+  setActive();
+})();
+</script>
+</body>
+</html>
